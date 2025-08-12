@@ -24,6 +24,33 @@ document.addEventListener('deviceready', onDeviceReady, false);
 function onDeviceReady() {
     // Cordova is now initialized. Have fun!
 
+document.addEventListener('deviceready', () => {
+  const log = (m) => {
+    const pre = document.getElementById('log') || document.body.appendChild(document.createElement('pre'));
+    pre.id = 'log'; pre.textContent += m + '\n';
+  };
+
+  if (!window.FirebasePlugin) { log('FirebasePlugin fehlt'); return; }
+
+  // Android 13+: Benachrichtigungs-Recht
+  if (FirebasePlugin.hasPermission) {
+    FirebasePlugin.hasPermission((granted) => {
+      log('Push permission: ' + granted);
+      if (!granted && FirebasePlugin.grantPermission) {
+        FirebasePlugin.grantPermission((r)=>log('Permission requested: '+r),(e)=>log('Perm error: '+e));
+      }
+    });
+  }
+
+  // FCM-Token anzeigen (für Test-Push in der Konsole)
+  FirebasePlugin.getToken(
+    (t)=>log('FCM token:\n' + t),
+    (e)=>log('getToken error: ' + e)
+  );
+
+  // Beispiel-Analytics
+  FirebasePlugin.logEvent("app_open", {});
+});
     console.log('Running cordova-' + cordova.platformId + '@' + cordova.version);
     document.getElementById('deviceready').classList.add('ready');
 }

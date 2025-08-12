@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1059086304990",
+    "project_id": "wrappednow-a314a",
+    "storage_bucket": "wrappednow-a314a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1059086304990:android:ca1cc43e525283cbe6644f",
+        "android_client_info": {
+          "package_name": "ch.example.wrappednow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSrSgbEa56RjsY7J6NiInzYrS5A_3V5fw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
