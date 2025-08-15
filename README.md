@@ -1,4 +1,4 @@
-# WrappedNow  WrappedNow
+# WrappedNow
 
 > ### Spotify Wrapped, but whenever and wherever you want it.
 
