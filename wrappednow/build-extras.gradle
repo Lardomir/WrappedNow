@@ -1,0 +1,9 @@
+// build-extras.gradle
+// Dieser Block definiert die fehlenden SDK-Versionen für das gesamte Projekt.
+ext.cdvMinSdkVersion = 24
+android {
+    compileSdkVersion 34
+    defaultConfig {
+        targetSdkVersion 34
+    }
+}

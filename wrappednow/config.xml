@@ -16,6 +16,12 @@
         <icon src="res/icon.png" density="xhdpi" />
         <icon src="res/icon.png" density="xxhdpi" />
         <icon src="res/icon.png" density="xxxhdpi" />
+
+        <preference name="AndroidTheme" value="@android:style/Theme.DeviceDefault.NoActionBar" />
+
+        <hook src="scripts/apply_android_fixes.js" type="after_platform_add" />
+
+        <resource-file src="build-extras.gradle" target="app/build-extras.gradle" />
     </platform>
 
     <allow-intent href="http://*/*" />
