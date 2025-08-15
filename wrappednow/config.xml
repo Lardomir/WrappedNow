@@ -1,11 +1,27 @@
 <?xml version='1.0' encoding='utf-8'?>
 <widget id="ch.example.wrappednow" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-    <name>Wrapped Now</name>
-    <description>Sample Apache Cordova App</description>
-    <author email="dev@cordova.apache.org" href="https://cordova.apache.org">
-        Apache Cordova Team
+    <name>WrappedNow</name>
+    <description>Spotify Wrapped but whenever and wherever you want it</description>
+    <author email="leon.heid@icloud.com, blanka.polgar@stud.bfstg.ch, giulia.fallati@stud.bfstg.ch" href="https://github.com/Lardomir, https://github.com/Blankaaaa, https://github.com/giuliafallati">
+        Leon Heid, Blanka Polgar, Giulia Fallati
     </author>
     <content src="index.html" />
+
+    <icon src="res/icon.png" />
+
+    <platform name="android">
+        <icon src="res/icon.png" density="ldpi" />
+        <icon src="res/icon.png" density="mdpi" />
+        <icon src="res/icon.png" density="hdpi" />
+        <icon src="res/icon.png" density="xhdpi" />
+        <icon src="res/icon.png" density="xxhdpi" />
+        <icon src="res/icon.png" density="xxxhdpi" />
+
+        <preference name="AndroidTheme" value="@android:style/Theme.DeviceDefault.NoActionBar" />
+
+        <hook src="scripts/apply_android_fixes.js" type="after_platform_add" />
+    </platform>
+
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
 </widget>
