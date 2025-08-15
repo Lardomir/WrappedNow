@@ -17,7 +17,7 @@ async function generateCodeChallenge(codeVerifier) {
 }
 
 const spotifyConfig = {
-    clientId: 'd9ba24940baa404fb039c92774ed2dda',
+    clientId: 'c2c8b8df5d4f41af934e07a70bc149dd',
     redirectUri: 'ch.example.wrappednow://callback',
     scope: 'user-read-private user-read-email user-top-read user-read-recently-played'
 };
