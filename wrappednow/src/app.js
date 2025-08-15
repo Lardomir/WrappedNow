@@ -39,7 +39,6 @@ async function loginWithSpotify() {
 
     const authUrl = `https://accounts.spotify.com/authorize?${args}`;
     
-    // Stellt sicher, dass die Plugins geladen sind
     if (cordova.plugins && cordova.plugins.browsertab) {
         cordova.plugins.browsertab.openUrl(authUrl);
     } else {
@@ -47,14 +46,10 @@ async function loginWithSpotify() {
     }
 }
 
-/**
- * Diese globale Funktion wird vom cordova-plugin-customurlscheme aufgerufen,
- * wenn die App über die Redirect URI geöffnet wird.
- */
+
 window.handleOpenURL = async (url) => {
   console.log("Received redirect URL: " + url);
   
-  // Schliesst den Browser-Tab, sobald wir zurück in der App sind
   if (cordova.plugins && cordova.plugins.browsertab) {
     cordova.plugins.browsertab.close();
   }
@@ -104,8 +99,7 @@ async function getSpotifyAccessToken(code) {
 
     alert("Login successful!");
     console.log("Access Token received and stored.");
-    
-    // Hier können Sie den Benutzer zur Hauptansicht Ihrer App weiterleiten.
+
 
   } catch (error) {
     console.error('Error getting access token:', error);

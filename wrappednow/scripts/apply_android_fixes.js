@@ -7,7 +7,6 @@ module.exports = function(context) {
 
     const platformRoot = path.join(context.opts.projectRoot, 'platforms', 'android');
 
-    // --- Fix #1: Set cdvMinSdkVersion in platforms/android/build.gradle ---
     const mainGradleFile = path.join(platformRoot, 'build.gradle');
     if (fs.existsSync(mainGradleFile)) {
         let gradleContent = fs.readFileSync(mainGradleFile, 'utf8');
@@ -20,7 +19,6 @@ module.exports = function(context) {
         }
     }
 
-    // --- Fix #2: Set compileSdkVersion in platforms/android/app/build.gradle ---
     const appGradleFile = path.join(platformRoot, 'app', 'build.gradle');
     if (fs.existsSync(appGradleFile)) {
         let appGradleContent = fs.readFileSync(appGradleFile, 'utf8');
