@@ -1,0 +1,46 @@
+/* Light/Dark theming for the log + badges */
+:root {
+  color-scheme: light dark;
+
+  --log-bg: #f6f6f6;
+  --log-fg: #000;
+  --badge-start-bg: #e6ffea;
+  --badge-start-fg: #073b0b;
+  --badge-stop-bg:  #ffeaea;
+  --badge-stop-fg:  #611a15;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --log-bg: #0f1115;
+    --log-fg: #fff;
+    --badge-start-bg: #12451a;
+    --badge-start-fg: #cff7d5;
+    --badge-stop-bg:  #4b1212;
+    --badge-stop-fg:  #ffd6d6;
+  }
+}
+
+#log.log {
+  background: var(--log-bg);
+  color: var(--log-fg);
+  padding: 12px;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  max-height: 220px;
+  overflow: auto;
+  font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  margin: 0 0 12px 0;
+}
+
+.log-line { margin: 2px 0; }
+.badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: .02em;
+}
+.badge-start { background: var(--badge-start-bg); color: var(--badge-start-fg); }
+.badge-stop  { background: var(--badge-stop-bg);  color: var(--badge-stop-fg);  }
