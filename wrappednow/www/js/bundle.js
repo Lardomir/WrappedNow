@@ -1,1 +1,150 @@
-function g(e){let t="",n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";for(let o=0;o<e;o++)t+=n.charAt(Math.floor(Math.random()*n.length));return t}async function u(e){let t=new TextEncoder().encode(e),n=await window.crypto.subtle.digest("SHA-256",t);return window.btoa(String.fromCharCode.apply(null,[...new Uint8Array(n)])).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}var a={clientId:"d9ba24940baa404fb039c92774ed2dda",redirectUri:"ch.example.wrappednow://callback",scope:"user-read-private user-read-email user-top-read user-read-recently-played"};async function h(){let e=g(128),t=await u(e);window.localStorage.setItem("spotify_code_verifier",e);let o=`https://accounts.spotify.com/authorize?${new URLSearchParams({response_type:"code",client_id:a.clientId,scope:a.scope,redirect_uri:a.redirectUri,code_challenge_method:"S256",code_challenge:t})}`;cordova.plugins&&cordova.plugins.browsertab?cordova.plugins.browsertab.openUrl(o):alert("BrowserTab-Plugin nicht gefunden!")}window.handleOpenURL=async e=>{console.log("Received redirect URL: "+e),cordova.plugins&&cordova.plugins.browsertab&&cordova.plugins.browsertab.close();let t=new URL(e).searchParams.get("code");if(t)await w(t);else{let n=new URL(e).searchParams.get("error");console.error("Spotify login failed:",n),alert("Login failed: "+n)}};async function w(e){let t=window.localStorage.getItem("spotify_code_verifier");if(!t){console.error("Code verifier not found!");return}let n=new URLSearchParams({client_id:a.clientId,grant_type:"authorization_code",code:e,redirect_uri:a.redirectUri,code_verifier:t});try{let o=await fetch("https://accounts.spotify.com/api/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:n.toString()});if(!o.ok){let i=await o.text();throw new Error(`HTTP status ${o.status}: ${i}`)}let s=await o.json();window.localStorage.setItem("spotify_access_token",s.access_token),window.localStorage.setItem("spotify_refresh_token",s.refresh_token),console.log("Access Token received and stored."),window.location.href="dashboard.html"}catch(o){console.error("Error getting access token:",o),alert("Error getting access token. See console for details.")}}async function y(){let e=window.localStorage.getItem("spotify_access_token");if(!e)return;let t={Authorization:`Bearer ${e}`};try{let o=await(await fetch("https://api.spotify.com/v1/me",{headers:t})).json(),s=document.getElementById("user-name");s&&o.display_name&&(s.textContent=o.display_name);let i=document.getElementById("profile-image");i&&o.images&&o.images.length>0&&(i.src=o.images[0].url);let c=await(await fetch("https://api.spotify.com/v1/me/top/tracks?limit=1",{headers:t})).json();if(c.items&&c.items.length>0){let r=document.getElementById("top-song");r&&(r.textContent=c.items[0].name)}let d=await(await fetch("https://api.spotify.com/v1/me/top/artists?limit=1",{headers:t})).json();if(d.items&&d.items.length>0){let r=document.getElementById("top-artist");r&&(r.textContent=d.items[0].name)}let l=await(await fetch("https://api.spotify.com/v1/me/player/recently-played?limit=50",{headers:t})).json();if(l.items){let r=Math.round(l.items.reduce((m,f)=>m+f.track.duration_ms,0)/6e4),p=document.getElementById("minutes-listened");p&&(p.textContent=String(r))}}catch(n){console.error("Error loading dashboard:",n)}}function _(){let e=document.getElementById("loginButton");e&&(e.style.display="block",e.addEventListener("click",h)),document.getElementById("dashboard")&&y()}document.addEventListener("deviceready",_);
+// src/app.js
+
+// --- PKCE Helper Functions ---
+// This function generates a random string of a specified length.
+// It's used to create the 'code_verifier', a unique key for each login attempt.
+function generateRandomString(length) {
+  let text = "";
+  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  for (let i = 0; i < length; i++) {
+    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  }
+  return text;
+}
+
+// This asynchronous function creates a 'code_challenge' from the 'code_verifier'.
+// It uses the SHA-256 algorithm to hash the verifier and then encodes it in Base64Url format.
+// This is the key to the PKCE security flow.
+async function generateCodeChallenge(codeVerifier) {
+  const data = new TextEncoder().encode(codeVerifier);
+  const digest = await window.crypto.subtle.digest("SHA-256", data);
+  return window.btoa(String.fromCharCode.apply(null, [...new Uint8Array(digest)])).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+// Configuration object for the Spotify API.
+// Contains your app's client ID, the redirect URI, and the user permissions (scope).
+var spotifyConfig = {
+  clientId: "d9ba24940baa404fb039c92774ed2dda",
+  redirectUri: "ch.example.wrappednow://callback",
+  scope: "user-read-private user-read-email user-top-read user-read-recently-played"
+};
+
+// --- Login Functions ---
+// This is the main function to start the Spotify login process.
+async function loginWithSpotify() {
+  // Generate the unique code verifier and its corresponding challenge.
+  const codeVerifier = generateRandomString(128);
+  const codeChallenge = await generateCodeChallenge(codeVerifier);
+  // Store the verifier in the browser's local storage to be retrieved later.
+  window.localStorage.setItem("spotify_code_verifier", codeVerifier);
+
+  // Construct the URL parameters for the Spotify authorization request.
+  const args = new URLSearchParams({
+    response_type: "code", // We are requesting an authorization code
+    client_id: spotifyConfig.clientId,
+    scope: spotifyConfig.scope,
+    redirect_uri: spotifyConfig.redirectUri,
+    code_challenge_method: "S256", // Specifies the hashing method used for the challenge
+    code_challenge: codeChallenge
+  });
+
+  // Construct the full authorization URL. This URL is where the user will be sent.
+  // NOTE: The `https://accounts.spotify.com/authorize?$` part is a placeholder
+  // and needs to be replaced with the actual Spotify authorization endpoint.
+  const authUrl = `https://accounts.spotify.com/authorize?${args}`;
+
+  // Use the Cordova BrowserTab plugin to open the URL in a secure in-app browser.
+  if (cordova.plugins && cordova.plugins.browsertab) {
+    cordova.plugins.browsertab.openUrl(authUrl);
+  } else {
+    // Fallback for when the plugin is not found.
+    alert("BrowserTab-Plugin nicht gefunden!");
+  }
+}
+
+// --- Callback and Token Functions ---
+// This is a special function in Cordova that gets called when the app receives
+// a redirect URL from an external source (like the in-app browser after login).
+window.handleOpenURL = async (url) => {
+  console.log("Received redirect URL: " + url);
+
+  // Close the in-app browser tab.
+  if (cordova.plugins && cordova.plugins.browsertab) {
+    cordova.plugins.browsertab.close();
+  }
+
+  // Parse the received URL to get the authorization code.
+  const code = new URL(url).searchParams.get("code");
+  if (code) {
+    // If a code is found, proceed to get the access token.
+    await getSpotifyAccessToken(code);
+  } else {
+    // If there's no code, it's an error. Log it and alert the user.
+    const error = new URL(url).searchParams.get("error");
+    console.error("Spotify login failed:", error);
+    alert("Login failed: " + error);
+  }
+};
+
+// This function exchanges the authorization code for an access token.
+async function getSpotifyAccessToken(code) {
+  // Retrieve the stored code verifier.
+  const codeVerifier = window.localStorage.getItem("spotify_code_verifier");
+  if (!codeVerifier) {
+    console.error("Code verifier not found!");
+    return;
+  }
+
+  // Construct the request body for the token exchange.
+  const body = new URLSearchParams({
+    client_id: spotifyConfig.clientId,
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: spotifyConfig.redirectUri,
+    code_verifier: codeVerifier // This proves we are the same app that initiated the login.
+  });
+
+  try {
+    // Send a POST request to the Spotify token endpoint.
+    // NOTE: `https://accounts.spotify.com/api/token` is a placeholder.
+    const response = await fetch("https://accounts.spotify.com/api/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString()
+    });
+
+    // Check if the request was successful.
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`HTTP status ${response.status}: ${errorBody}`);
+    }
+
+    // Parse the JSON response.
+    const data = await response.json();
+
+    // Store the access token and refresh token in local storage.
+    window.localStorage.setItem("spotify_access_token", data.access_token);
+    window.localStorage.setItem("spotify_refresh_token", data.refresh_token);
+
+    alert("Login successful!");
+    console.log("Access Token received and stored.");
+  } catch (error) {
+    // Handle any errors during the token exchange.
+    console.error("Error getting access token:", error);
+    alert("Error getting access token. See console for details.");
+  }
+}
+
+// --- App Initialization ---
+// The main boot function for the app.
+function boot() {
+  const loginButton = document.getElementById("loginButton");
+  // Make sure the login button is visible.
+  loginButton.style.display = "block";
+  // Add an event listener to the login button to start the process on click.
+  loginButton.addEventListener("click", loginWithSpotify);
+}
+
+// Listen for the 'deviceready' event, which is triggered when Cordova is fully loaded.
+// This ensures that all Cordova plugins are ready to be used before we run our code.
+document.addEventListener("deviceready", boot);
