@@ -1,27 +1,224 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Security-Policy"
-          content="default-src 'self' data: https://ssl.gstatic.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content:;">
-    <meta name="format-detection" content="telephone=no">
-    <meta name="msapplication-tap-highlight" content="no">
-    <meta name="viewport" content="initial-scale=1, width=device-width, viewport-fit=cover">
-    <meta name="color-scheme" content="light dark">
-    <link rel="stylesheet" href="css/index.css">
-    <title>Hello World</title>
+    <meta charset="utf-8" />
+    <title>WrappedNow</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-<div class="app">
-    <h1>WrappedNow</h1>
-    <div id="deviceready">
-        <p class="event listening">Connecting to Device</p>
-        <p class="event received">Device is Ready</p>
-        <button id="loginButton" style="display: none;">Login with Spotify</button>
+<div class="container">
+    <div class="logo-container">
+        <img src="img/icon.png" alt="WrappedNow Logo" class="logo">
     </div>
+    <h1>WrappedNow</h1>
+
+    <button id="login-btn">
+        <svg class="spotify-icon" viewBox="0 0 168 168" xmlns="http://www.w3.org/2000/svg">
+            <path fill="currentColor" d="M84 0c46.3 0 84 37.7 84 84s-37.7 84-84 84S0 130.3 0 84 37.7 0 84 0zm19.6 120.4c-1.3 2.1-3.9 2.8-6.1 1.5-18.7-11.4-42.3-13.3-64.8-5.7-2.3.8-4.7-.6-5.5-2.9-.8-2.3.6-4.7 2.9-5.5 24.3-8.2 49.3-6.1 69.7 6.1 2.3 1.3 3 3.9 1.7 6.1zm15.6-21.8c-1.6 2.6-4.9 3.5-7.5 1.9-20.9-12.8-52.6-16.7-74.9-9.3-2.6.9-5.4-.5-6.3-3.1-.9-2.6.5-5.4 3.1-6.3 25.4-8.7 59.2-4.7 82.5 9.3 2.5 1.6 3.4 4.9 1.8 7.5zm15.4-23.7c-1.9 3.1-6.1 4.1-9.2 2.2-26.6-16.3-66.3-20.5-98.2-10.3-3.1.9-6.3-1-7.2-4.1-.9-3.1 1-6.3 4.1-7.2 35.8-11.2 78.4-6.8 107.2 11.2 3.1 1.9 4.1 6.1 2.2 9.2z"/>
+        </svg>
+        LOG IN WITH SPOTIFY
+    </button>
+    <p id="not-connected-text" class="not-connected">Not connected to Spotify?</p>
+
+    <div id="user-info" style="display: none;">
+    </div>
+    <button id="logout-btn" style="display: none;">LOGOUT</button>
+
 </div>
 <script src="cordova.js"></script>
-<script src="js/index.js"></script>
-<script type="module" src="js/bundle.js"></script>
+<script>
+    // --- Start der integrierten App-Logik ---
+
+    // --- PKCE Helper Functions ---
+    // Generates a random string used as the 'code_verifier' for the PKCE flow.
+    function generateRandomString(length) {
+        let text = '';
+        const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        for (let i = 0; i < length; i++) {
+            text += possible.charAt(Math.floor(Math.random() * possible.length));
+        }
+        return text;
+    }
+
+    // Creates the 'code_challenge' from the 'code_verifier' using SHA-256 and Base64Url encoding.
+    async function generateCodeChallenge(codeVerifier) {
+        const data = new TextEncoder().encode(codeVerifier);
+        const digest = await window.crypto.subtle.digest('SHA-256', data);
+        return window.btoa(String.fromCharCode.apply(null, [...new Uint8Array(digest)]))
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_')
+            .replace(/=+$/, '');
+    }
+
+    // Spotify API configuration details
+    const spotifyConfig = {
+        clientId: 'd9ba24940baa404fb039c92774ed2dda',
+        redirectUri: 'ch.example.wrappednow://callback', // Must match the URI registered with Spotify
+        scope: 'user-read-private user-read-email user-top-read user-read-recently-played'
+    };
+
+    // --- UI Management Functions ---
+    // Displays the login UI elements and hides the logged-in elements.
+    function showLoginUI() {
+        document.getElementById('login-btn').style.display = 'flex';
+        document.getElementById('not-connected-text').style.display = 'block';
+        document.getElementById('user-info').style.display = 'none';
+        document.getElementById('logout-btn').style.display = 'none';
+    }
+
+    // Saves user data and redirects to the home page after a successful login.
+    function showLoggedInUI(profileData) {
+        // Save user data to localStorage so it can be accessed on the home page
+        window.localStorage.setItem('spotify_user_data', JSON.stringify(profileData));
+
+        // Redirect to the home page after successful login. The path is relative to www/.
+        window.location.href = '../src/screens/home.html';
+    }
+
+    // --- Spotify API Functions ---
+    // Initiates the Spotify authentication process.
+    async function loginWithSpotify() {
+        const codeVerifier = generateRandomString(128);
+        const codeChallenge = await generateCodeChallenge(codeVerifier);
+        window.localStorage.setItem('spotify_code_verifier', codeVerifier); // Save verifier for later use
+
+        const args = new URLSearchParams({
+            response_type: 'code',
+            client_id: spotifyConfig.clientId,
+            scope: spotifyConfig.scope,
+            redirect_uri: spotifyConfig.redirectUri,
+            code_challenge_method: 'S256',
+            code_challenge: codeChallenge
+        });
+
+        // This is the corrected and official Spotify endpoint for authorization
+        const authUrl = `https://accounts.spotify.com/authorize?${args.toString()}`;
+
+        // Open the Spotify login page in an in-app browser using the Cordova BrowserTab plugin
+        if (cordova.plugins && cordova.plugins.browsertab) {
+            cordova.plugins.browsertab.openUrl(authUrl);
+        } else {
+            alert('BrowserTab-Plugin nicht gefunden!');
+        }
+    }
+
+    // Exchanges the authorization code for an access token.
+    function getSpotifyAccessToken(code) {
+        const codeVerifier = window.localStorage.getItem('spotify_code_verifier');
+        if (!codeVerifier) {
+            console.error("Code verifier not found!");
+            return;
+        }
+
+        const params = new URLSearchParams({
+            client_id: spotifyConfig.clientId,
+            grant_type: 'authorization_code',
+            code: code,
+            redirect_uri: spotifyConfig.redirectUri,
+            code_verifier: codeVerifier
+        });
+
+        const http = new cordova.plugin.http.CordovaHttpPlugin();
+        http.setHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+        // This is the corrected and official Spotify endpoint for the token exchange
+        http.post('https://accounts.spotify.com/api/token', params.toString(), {},
+            function(response) {
+                try {
+                    const data = JSON.parse(response.data);
+                    window.localStorage.setItem('spotify_access_token', data.access_token);
+                    window.localStorage.setItem('spotify_refresh_token', data.refresh_token);
+                    console.log("Access Token received and stored.");
+                    getSpotifyProfile(); // Proceed to fetch user profile
+                } catch (e) {
+                    console.error('Failed to parse token response', e);
+                    alert('Error: Could not read token response.');
+                }
+            },
+            function(response) {
+                console.error('Error getting access token:', JSON.stringify(response));
+                alert('Error getting access token. See console for details.');
+            }
+        );
+    }
+
+    // Fetches the user's profile data from the Spotify API.
+    function getSpotifyProfile() {
+        const accessToken = window.localStorage.getItem('spotify_access_token');
+        if (!accessToken) {
+            showLoginUI(); // No token, show login UI
+            return;
+        }
+
+        cordova.plugin.http.setHeader('Authorization', `Bearer ${accessToken}`);
+
+        // This is the corrected and official Spotify endpoint for getting user data
+        cordova.plugin.http.get('https://api.spotify.com/v1/me', {}, {},
+            function(response) {
+                try {
+                    const profileData = JSON.parse(response.data);
+                    console.log("Spotify Profile Data:", profileData);
+                    showLoggedInUI(profileData); // Show logged-in UI and redirect
+                } catch (e) {
+                    console.error('Failed to parse profile data', e);
+                    alert('Error: Could not read profile data.');
+                }
+            },
+            function(response) {
+                console.error('Spotify API request failed', JSON.stringify(response));
+                alert(`Error fetching profile: ${response.error}`);
+                logout(); // API call failed, log out the user
+            }
+        );
+    }
+
+    // Clears local storage and shows the login UI.
+    function logout() {
+        console.log("Logging out...");
+        window.localStorage.removeItem('spotify_access_token');
+        window.localStorage.removeItem('spotify_refresh_token');
+        window.localStorage.removeItem('spotify_code_verifier');
+        showLoginUI();
+    }
+
+    // --- App Initialization ---
+    // Cordova's listener for the custom URL scheme redirect.
+    window.handleOpenURL = async (url) => {
+        if (cordova.plugins && cordova.plugins.browsertab) {
+            cordova.plugins.browsertab.close();
+        }
+        const code = new URL(url).searchParams.get('code');
+        if (code) {
+            getSpotifyAccessToken(code); // If a code is present, get the access token
+        } else {
+            const error = new URL(url).searchParams.get('error');
+            console.error("Spotify login failed:", error);
+            alert("Login failed: " + error);
+        }
+    };
+
+    // Main function to run when the Cordova app is ready.
+    function boot() {
+        // Add event listeners to the buttons
+        document.getElementById('login-btn').addEventListener('click', loginWithSpotify);
+        document.getElementById('logout-btn').addEventListener('click', logout);
+
+        const accessToken = window.localStorage.getItem('spotify_access_token');
+        if (accessToken) {
+            // If an access token already exists, fetch the profile and redirect
+            getSpotifyProfile();
+        } else {
+            // Otherwise, show the login UI
+            showLoginUI();
+        }
+    }
+
+    // Listen for the 'deviceready' event to start the app's logic
+    document.addEventListener('deviceready', boot);
+</script>
 </body>
 </html>

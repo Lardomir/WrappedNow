@@ -1,0 +1,73 @@
+body {
+    background-color: #000;
+    color: #fff;
+    font-family: 'Roboto', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    text-align: center;
+    overflow: hidden; /* Prevents scroll bars */
+}
+
+.container {
+    width: 90%;
+    max-width: 400px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.logo-container {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.logo {
+    width: 120px;
+    height: 120px;
+    fill: none;
+    stroke: #1DB954;
+    stroke-width: 4;
+}
+
+h1 {
+    font-size: 2.5em;
+    font-weight: 700;
+    margin: 10px 0 40px 0;
+    color: #fff;
+}
+
+#login-btn {
+    background-color: #1DB954;
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 15px 30px;
+    font-size: 1.1em;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: background-color 0.3s ease;
+}
+
+#login-btn:hover {
+    background-color: #1ED760;
+}
+
+.spotify-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.not-connected {
+    color: #a0a0a0;
+    font-size: 0.9em;
+    margin-top: 20px;
+}
