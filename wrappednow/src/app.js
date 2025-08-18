@@ -38,7 +38,7 @@ async function loginWithSpotify() {
     });
 
     const authUrl = `https://accounts.spotify.com/authorize?${args}`;
-    
+
     if (cordova.plugins && cordova.plugins.browsertab) {
         cordova.plugins.browsertab.openUrl(authUrl);
     } else {
@@ -46,10 +46,9 @@ async function loginWithSpotify() {
     }
 }
 
-
 window.handleOpenURL = async (url) => {
   console.log("Received redirect URL: " + url);
-  
+
   if (cordova.plugins && cordova.plugins.browsertab) {
     cordova.plugins.browsertab.close();
   }
@@ -71,7 +70,7 @@ async function getSpotifyAccessToken(code) {
     console.error("Code verifier not found!");
     return;
   }
-  
+
   const body = new URLSearchParams({
     client_id: spotifyConfig.clientId,
     grant_type: 'authorization_code',
@@ -93,13 +92,12 @@ async function getSpotifyAccessToken(code) {
     }
 
     const data = await response.json();
-    
+
     window.localStorage.setItem('spotify_access_token', data.access_token);
     window.localStorage.setItem('spotify_refresh_token', data.refresh_token);
 
-    alert("Login successful!");
     console.log("Access Token received and stored.");
-
+    window.location.href = 'dashboard.html';
 
   } catch (error) {
     console.error('Error getting access token:', error);
@@ -107,10 +105,59 @@ async function getSpotifyAccessToken(code) {
   }
 }
 
+async function loadDashboard() {
+  const token = window.localStorage.getItem('spotify_access_token');
+  if (!token) {
+    return;
+  }
+  const headers = { Authorization: `Bearer ${token}` };
+  try {
+    const profileResp = await fetch('https://api.spotify.com/v1/me', { headers });
+    const profile = await profileResp.json();
+    const nameEl = document.getElementById('user-name');
+    if (nameEl && profile.display_name) {
+      nameEl.textContent = profile.display_name;
+    }
+    const imgEl = document.getElementById('profile-image');
+    if (imgEl && profile.images && profile.images.length > 0) {
+      imgEl.src = profile.images[0].url;
+    }
+
+    const topTrackResp = await fetch('https://api.spotify.com/v1/me/top/tracks?limit=1', { headers });
+    const topTrack = await topTrackResp.json();
+    if (topTrack.items && topTrack.items.length > 0) {
+      const topSongEl = document.getElementById('top-song');
+      if (topSongEl) topSongEl.textContent = topTrack.items[0].name;
+    }
+
+    const topArtistResp = await fetch('https://api.spotify.com/v1/me/top/artists?limit=1', { headers });
+    const topArtist = await topArtistResp.json();
+    if (topArtist.items && topArtist.items.length > 0) {
+      const topArtistEl = document.getElementById('top-artist');
+      if (topArtistEl) topArtistEl.textContent = topArtist.items[0].name;
+    }
+
+    const recentResp = await fetch('https://api.spotify.com/v1/me/player/recently-played?limit=50', { headers });
+    const recent = await recentResp.json();
+    if (recent.items) {
+      const minutes = Math.round(recent.items.reduce((t, item) => t + item.track.duration_ms, 0) / 60000);
+      const minutesEl = document.getElementById('minutes-listened');
+      if (minutesEl) minutesEl.textContent = String(minutes);
+    }
+  } catch (err) {
+    console.error('Error loading dashboard:', err);
+  }
+}
+
 function boot() {
   const loginButton = document.getElementById('loginButton');
-  loginButton.style.display = 'block';
-  loginButton.addEventListener('click', loginWithSpotify);
+  if (loginButton) {
+    loginButton.style.display = 'block';
+    loginButton.addEventListener('click', loginWithSpotify);
+  }
+  if (document.getElementById('dashboard')) {
+    loadDashboard();
+  }
 }
 
 document.addEventListener('deviceready', boot);
