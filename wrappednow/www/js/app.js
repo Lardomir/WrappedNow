@@ -1,3 +1,4 @@
+// wrappednow/www/js/app.js
 // =======================
 // Spotify + App bootstrap
 // =======================
@@ -84,21 +85,19 @@ async function loginWithSpotify() {
 
 window.handleOpenURL = async (url) => {
   try { if (cordova.plugins && cordova.plugins.browsertab) cordova.plugins.browsertab.close(); } catch(_) {}
-  console.log('[OAuth] redirect URL:', url);
   const u = new URL(url);
   const code = u.searchParams.get('code');
   const err  = u.searchParams.get('error');
-  console.log('[OAuth] code:', code, 'error:', err);
   if (code) await getSpotifyAccessToken(code);
   else { alert('Login failed: ' + err); showLoginUI(); }
 };
 
 async function getSpotifyAccessToken(code) {
   const codeVerifier = localStorage.getItem('spotify_code_verifier');
-  if (!codeVerifier) { console.error('Missing PKCE verifier'); alert('Missing PKCE verifier'); return; }
+  if (!codeVerifier) { console.error('Missing PKCE verifier'); return; }
 
-  const http = cordova.plugin.http;          // cordova-plugin-advanced-http
-  http.setDataSerializer('urlencoded');      // form encoding
+  const http = cordova.plugin.http;
+  http.setDataSerializer('urlencoded');
 
   const data = {
     client_id: spotifyConfig.clientId,
@@ -111,14 +110,9 @@ async function getSpotifyAccessToken(code) {
   try {
     const resp = await new Promise((resolve, reject) => {
       http.sendRequest('https://accounts.spotify.com/api/token', {
-        method: 'post',
-        data,
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        method: 'post', data, headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
       }, resolve, reject);
     });
-
-    console.log('[OAuth] token status:', resp.status);
-    console.log('[OAuth] token raw:', resp.data);
 
     const payload = JSON.parse(resp.data);
     if (!payload.access_token) throw new Error('No access_token: ' + resp.data);
@@ -128,7 +122,6 @@ async function getSpotifyAccessToken(code) {
 
     await getSpotifyProfile();
   } catch (e) {
-    console.error('[OAuth] token error:', e);
     const msg = (e && (e.error || e.message)) ? String(e.error || e.message).slice(0, 500) : 'Unknown';
     alert('Error getting access token: ' + msg);
     showLoginUI();
@@ -145,7 +138,26 @@ async function getSpotifyProfile() {
     });
     if (!resp.ok) { const t = await resp.text(); throw new Error(`HTTP ${resp.status}: ${t}`); }
     const profile = await resp.json();
-    console.log('Spotify Profile:', profile);
+
+    if (profile.id && window.Firebase) {
+      try {
+        const { db, doc, setDoc } = window.Firebase;
+        await setDoc(doc(db, "users", profile.id), {
+          displayName: profile.display_name,
+          email: profile.email,
+          avatar: profile.images?.[0]?.url || null,
+          lastLogin: new Date()
+        });
+        console.log("User profile saved to Firestore.");
+
+        if (window.HistoryTracker) {
+            window.HistoryTracker.start(window.Firebase.db, profile.id);
+        }
+      } catch (e) {
+        console.error("Error saving to Firestore:", e);
+      }
+    }
+
     showLoggedInUI(profile);
   } catch (e) {
     console.error('Spotify API error:', e);
@@ -155,9 +167,13 @@ async function getSpotifyProfile() {
 }
 
 function logout() {
+  if (window.HistoryTracker) {
+    window.HistoryTracker.stop();
+  }
   localStorage.removeItem('spotify_access_token');
   localStorage.removeItem('spotify_refresh_token');
   localStorage.removeItem('spotify_code_verifier');
+  localStorage.removeItem('spotify_user_data');
   showLoginUI();
 }
 
@@ -263,13 +279,11 @@ window.loadDailyTrends = async function loadDailyTrends() {
   const path = mins.map((v,i)=>`${i===0?'M':'L'} ${x(i)} ${y(v)}`).join(' ');
   const dots = mins.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="3.5" fill="#1DB954"/>`).join('');
 
-  // Ensure SVG has its own size so it isn't "invisible"
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   svg.setAttribute('preserveAspectRatio', 'none');
-  svg.setAttribute('width', '100%');   // CSS will give it height
-  svg.setAttribute('height', '220');   // safety for environments ignoring CSS height
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '220');
 
-  // Y grid (0, mid, max)
   const yTicks = [0, yTop/2, yTop].map(val => {
     const Y = y(val);
     return `

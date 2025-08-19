@@ -12,16 +12,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
     <meta http-equiv="Content-Security-Policy" content="
-  default-src 'self' data: blob: gap:;
-  script-src  'self' 'unsafe-inline' https://unpkg.com;
-  style-src   'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com;
-  img-src     'self' data: blob: file: cdvfile: content: https://tile.openstreetmap.org https://*.tile.openstreetmap.org;
-  font-src    'self' data: https://fonts.gstatic.com;
-  connect-src 'self' https://accounts.spotify.com https://api.spotify.com https://*.tile.openstreetmap.org;
-  media-src   'self' data: blob:;
-  frame-src   'self';
-">
-
+        default-src 'self' data: blob: gap:;
+        script-src 'self' 'unsafe-inline' https://unpkg.com https://www.gstatic.com;
+        style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com;
+        img-src 'self' data: blob: file: cdvfile: content: https://tile.openstreetmap.org https://*.tile.openstreetmap.org;
+        font-src 'self' data: https://fonts.gstatic.com;
+        connect-src 'self' https://accounts.spotify.com https://api.spotify.com https://*.tile.openstreetmap.org https://firestore.googleapis.com;
+        media-src 'self' data: blob:;
+        frame-src 'self';
+    ">
 
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -45,6 +44,10 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <!-- App bootstrap -->
+<!-- Load Firebase and App Logic in order -->
+<script type="module" src="js/firebase-init.js"></script>
+<script src="js/history-tracker.js"></script>
 <script src="js/app.js"></script>
+
 </body>
 </html>
