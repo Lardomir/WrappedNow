@@ -51,6 +51,12 @@ window.wireUi = function wireUi() {
   if (chartEl && typeof window.loadDailyTrends === 'function') {
     window.loadDailyTrends();
   }
+
+  // Music Map mount (fixes "empty map" by mounting once visible)
+  const mapEl = document.getElementById('map');
+  if (mapEl && typeof window.mountMusicMap === 'function' && !mapEl.dataset.ready) {
+    window.mountMusicMap();
+  }
 };
 
 // --- Auth flow ---
@@ -76,47 +82,55 @@ async function loginWithSpotify() {
   }
 }
 
-// Deep link handler for Cordova
 window.handleOpenURL = async (url) => {
-  try { if (cordova.plugins && cordova.plugins.browsertab) cordova.plugins.browsertab.close(); } catch (_) {}
+  try { if (cordova.plugins && cordova.plugins.browsertab) cordova.plugins.browsertab.close(); } catch(_) {}
+  console.log('[OAuth] redirect URL:', url);
   const u = new URL(url);
   const code = u.searchParams.get('code');
-  if (code) {
-    await getSpotifyAccessToken(code);
-  } else {
-    const error = u.searchParams.get('error');
-    console.error('Spotify login failed:', error);
-    alert('Login failed: ' + error);
-    showLoginUI();
-  }
+  const err  = u.searchParams.get('error');
+  console.log('[OAuth] code:', code, 'error:', err);
+  if (code) await getSpotifyAccessToken(code);
+  else { alert('Login failed: ' + err); showLoginUI(); }
 };
 
 async function getSpotifyAccessToken(code) {
   const codeVerifier = localStorage.getItem('spotify_code_verifier');
-  if (!codeVerifier) { console.error('Code verifier not found'); showLoginUI(); return; }
+  if (!codeVerifier) { console.error('Missing PKCE verifier'); alert('Missing PKCE verifier'); return; }
 
-  const body = new URLSearchParams({
+  const http = cordova.plugin.http;          // cordova-plugin-advanced-http
+  http.setDataSerializer('urlencoded');      // form encoding
+
+  const data = {
     client_id: spotifyConfig.clientId,
     grant_type: 'authorization_code',
-    code,
+    code: code,
     redirect_uri: spotifyConfig.redirectUri,
     code_verifier: codeVerifier
-  });
+  };
 
   try {
-    const resp = await fetch('https://accounts.spotify.com/api/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString()
+    const resp = await new Promise((resolve, reject) => {
+      http.sendRequest('https://accounts.spotify.com/api/token', {
+        method: 'post',
+        data,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+      }, resolve, reject);
     });
-    if (!resp.ok) { const t = await resp.text(); throw new Error(`HTTP ${resp.status}: ${t}`); }
-    const data = await resp.json();
-    localStorage.setItem('spotify_access_token', data.access_token);
-    if (data.refresh_token) localStorage.setItem('spotify_refresh_token', data.refresh_token);
+
+    console.log('[OAuth] token status:', resp.status);
+    console.log('[OAuth] token raw:', resp.data);
+
+    const payload = JSON.parse(resp.data);
+    if (!payload.access_token) throw new Error('No access_token: ' + resp.data);
+
+    localStorage.setItem('spotify_access_token', payload.access_token);
+    if (payload.refresh_token) localStorage.setItem('spotify_refresh_token', payload.refresh_token);
+
     await getSpotifyProfile();
   } catch (e) {
-    console.error('Error getting access token:', e);
-    alert('Error getting access token. See console for details.');
+    console.error('[OAuth] token error:', e);
+    const msg = (e && (e.error || e.message)) ? String(e.error || e.message).slice(0, 500) : 'Unknown';
+    alert('Error getting access token: ' + msg);
     showLoginUI();
   }
 }
@@ -196,13 +210,13 @@ window.loadHomeStats = async function loadHomeStats() {
   }
 };
 
-// ---- Daily Trends: real data from /me/player/recently-played ----
+// ---- Daily Trends (real /me/player/recently-played data) ----
 window.loadDailyTrends = async function loadDailyTrends() {
   const token = localStorage.getItem('spotify_access_token');
   const svg = document.getElementById('dt-chart');
   if (!token || !svg) return;
 
-  // 1) Fetch recent plays (last ~50 tracks with timestamps)
+  // 1) Fetch recent plays (last ~50 tracks)
   let items = [];
   try {
     const r = await fetch('https://api.spotify.com/v1/me/player/recently-played?limit=50', {
@@ -248,6 +262,12 @@ window.loadDailyTrends = async function loadDailyTrends() {
 
   const path = mins.map((v,i)=>`${i===0?'M':'L'} ${x(i)} ${y(v)}`).join(' ');
   const dots = mins.map((v,i)=>`<circle cx="${x(i)}" cy="${y(v)}" r="3.5" fill="#1DB954"/>`).join('');
+
+  // Ensure SVG has its own size so it isn't "invisible"
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.setAttribute('width', '100%');   // CSS will give it height
+  svg.setAttribute('height', '220');   // safety for environments ignoring CSS height
 
   // Y grid (0, mid, max)
   const yTicks = [0, yTop/2, yTop].map(val => {

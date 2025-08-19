@@ -6,20 +6,31 @@
         Leon Heid, Blanka Polgar, Giulia Fallati
     </author>
     <content src="index.html" />
-
-    <icon src="res/icon.png" />
-
+    <plugin name="cordova-plugin-customurlscheme">
+        <variable name="URL_SCHEME" value="ch.example.wrappednow" />
+        <variable name="ANDROID_SCHEME" value="ch.example.wrappednow" />
+        <variable name="ANDROID_HOST" value="callback" />
+        <variable name="ANDROID_PATHPREFIX" value="/" />
+    </plugin>
+    <plugin name="cordova-plugin-geolocation" />
+    <plugin name="cordova-plugin-device" />
+    <plugin name="cordova-plugin-device-motion" />
+    <access origin="https://accounts.spotify.com" />
+    <access origin="https://api.spotify.com" />
+    <access origin="https://*.tile.openstreetmap.org" />
     <platform name="android">
-        <icon src="res/icon.png" density="ldpi" />      <!--ldpi ≈ 36×36 px -->
-        <icon src="res/icon.png" density="mdpi" />      <!--mdpi ≈ 48×48 px -->
-        <icon src="res/icon.png" density="hdpi" />      <!--hdpi ≈ 72×72 px -->
-        <icon src="res/icon.png" density="xhdpi" />     <!--xhdpi ≈ 96×96 px -->
-        <icon src="res/icon.png" density="xxhdpi" />    <!--xxhdpi ≈ 144×144 px -->
-        <icon src="res/icon.png" density="xxxhdpi" />   <!--xxxhdpi ≈ 192×192 px -->
+        <icon density="ldpi" src="res/icon.png" />
+        <icon density="mdpi" src="res/icon.png" />
+        <icon density="hdpi" src="res/icon.png" />
+        <icon density="xhdpi" src="res/icon.png" />
+        <icon density="xxhdpi" src="res/icon.png" />
+        <icon density="xxxhdpi" src="res/icon.png" />
+        <preference name="android-minSdkVersion" value="23" />
+        <preference name="android-targetSdkVersion" value="35" />
+        <preference name="android-compileSdkVersion" value="35" />
         <preference name="AndroidTheme" value="@android:style/Theme.DeviceDefault.NoActionBar" />
         <hook src="scripts/apply_android_fixes.js" type="after_platform_add" />
     </platform>
-
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
 </widget>

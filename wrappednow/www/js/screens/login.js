@@ -4,7 +4,7 @@
       <div class="center-page">
         <div class="container">
           <div class="logo-container">
-            <img src="img/icon.png" alt="WrappedNow Logo" class="logo">
+            <img src="img/wrapped.png" alt="WrappedNow Logo" class="logo">
           </div>
 
           <h1>WrappedNow</h1>
