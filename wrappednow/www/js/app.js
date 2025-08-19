@@ -3,6 +3,7 @@
 // =======================
 
 // --- PKCE helpers ---
+
 function generateRandomString(length) {
   let text = '';
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -29,7 +30,9 @@ function showLoginUI() {
 }
 function showLoggedInUI(profileData) {
   localStorage.setItem('spotify_user_data', JSON.stringify(profileData));
-  location.hash = '#/home';
+  const next = localStorage.getItem('post_login_route') || '#/home';
+  localStorage.removeItem('post_login_route');
+  location.hash = next;
 }
 
 // Re-bind after each render
@@ -138,21 +141,21 @@ async function getSpotifyAccessToken(code) {
 async function getSpotifyProfile() {
   const token = localStorage.getItem('spotify_access_token');
   if (!token) return showLoginUI();
-
   try {
     const resp = await fetch('https://api.spotify.com/v1/me', {
       headers: { Authorization: `Bearer ${token}` }
     });
-    if (!resp.ok) { const t = await resp.text(); throw new Error(`HTTP ${resp.status}: ${t}`); }
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
     const profile = await resp.json();
-    console.log('Spotify Profile:', profile);
     showLoggedInUI(profile);
   } catch (e) {
-    console.error('Spotify API error:', e);
-    alert('Could not fetch profile. Logging out.');
-    logout();
+    console.error('Spotify /me error (keeping token):', e);
+    // Do NOT logout(); keep token so the guard won't bounce.
+    // Optionally show a toast here.
+    location.hash = '#/home';
   }
 }
+
 
 function logout() {
   localStorage.removeItem('spotify_access_token');

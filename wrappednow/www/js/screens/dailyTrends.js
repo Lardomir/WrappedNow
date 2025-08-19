@@ -5,7 +5,6 @@
         <header class="dt-header">
           <h1>DAILY TRENDS</h1>
         </header>
-
         <section class="dt-chart-card">
           <div class="dt-chart-box">
             <svg id="dt-chart" viewBox="0 0 340 200" preserveAspectRatio="xMidYMid meet" class="dt-svg">
@@ -35,6 +34,9 @@
           </div>
         </section>
       </div>
+       <div class="container">
+              <a href="#/home">← Back Home</a>
+            </div>
     `;
   };
 })();
