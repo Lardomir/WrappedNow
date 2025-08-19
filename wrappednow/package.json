@@ -18,12 +18,17 @@
     "cordova-android": "^14.0.1",
     "cordova-browser": "^7.0.0",
     "cordova-plugin-advanced-http": "^3.3.1",
+    "cordova-plugin-android-permissions": "^1.1.5",
     "cordova-plugin-androidx-adapter": "^1.1.3",
     "cordova-plugin-browsertab": "^0.2.0",
     "cordova-plugin-compat": "^1.2.0",
     "cordova-plugin-customurlscheme": "^5.0.2",
+    "cordova-plugin-device": "^3.0.0",
+    "cordova-plugin-device-motion": "^2.0.1",
     "cordova-plugin-file": "^8.1.3",
-    "cordova-plugin-firebasex": "^18.0.7"
+    "cordova-plugin-firebasex": "^18.0.7",
+    "cordova-plugin-geolocation": "^5.0.0",
+    "cordova-plugin-permissions": "^0.0.1-security"
   },
   "cordova": {
     "platforms": [
@@ -37,7 +42,13 @@
       "cordova-plugin-browsertab": {},
       "cordova-plugin-customurlscheme": {
         "URL_SCHEME": "ch.example.wrappednow"
-      }
+      },
+      "cordova-plugin-geolocation": {},
+      "cordova-plugin-device": {},
+      "cordova-plugin-device-motion": {},
+      "cordova-plugin-android-permissions": {},
+      "cordova-plugin-compat": {},
+      "cordova-plugin-file": {}
     }
   },
   "dependencies": {
