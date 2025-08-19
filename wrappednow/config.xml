@@ -10,12 +10,12 @@
     <icon src="res/icon.png" />
 
     <platform name="android">
-        <icon src="res/icon.png" density="ldpi" />
-        <icon src="res/icon.png" density="mdpi" />
-        <icon src="res/icon.png" density="hdpi" />
-        <icon src="res/icon.png" density="xhdpi" />
-        <icon src="res/icon.png" density="xxhdpi" />
-        <icon src="res/icon.png" density="xxxhdpi" />
+        <icon src="res/icon.png" density="ldpi" />      <!--ldpi ≈ 36×36 px -->
+        <icon src="res/icon.png" density="mdpi" />      <!--mdpi ≈ 48×48 px -->
+        <icon src="res/icon.png" density="hdpi" />      <!--hdpi ≈ 72×72 px -->
+        <icon src="res/icon.png" density="xhdpi" />     <!--xhdpi ≈ 96×96 px -->
+        <icon src="res/icon.png" density="xxhdpi" />    <!--xxhdpi ≈ 144×144 px -->
+        <icon src="res/icon.png" density="xxxhdpi" />   <!--xxxhdpi ≈ 192×192 px -->
         <preference name="AndroidTheme" value="@android:style/Theme.DeviceDefault.NoActionBar" />
         <hook src="scripts/apply_android_fixes.js" type="after_platform_add" />
     </platform>
